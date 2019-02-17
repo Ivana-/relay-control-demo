@@ -35,7 +35,11 @@
                         (if (>= d 0) (filter identity (map fr [1 -1])))))]
     (or (->> [absa (- absa)] (mapcat roots) first :dir) 0)))
 
-(defn move-rocket [{:keys [system rocket max-rocket-force start-point finish-point]} dt]
+
+;; test filtering relay PWM-type control signal
+
+#_(defn move-rocket [{:keys [system rocket a-log r-log rx-1 ry-1
+                           max-rocket-force spline-factor start-point finish-point]} dt]
   (when rocket
     (let [{xr :x yr :y vxr :vx vyr :vy} rocket
           flat-system (flatten-system system)
@@ -51,12 +55,48 @@
                           :else (-> acc
                                     (update :ax + (* ai (/ dx dl)))
                                     (update :ay + (* ai (/ dy dl))))))) {:ax 0 :ay 0} flat-system)
-          amax (* 2 max-rocket-force)
+          amax max-rocket-force
           {xf :x yf :y vxf :vx vyf :vy} (->> flat-system (filter #(= finish-point (:n %))) first)
-          ax (* amax (calculate-force-direction (- xr xf) (- vxr vxf) amax))
-          ay (* amax (calculate-force-direction (- yr yf) (- vyr vyf) amax))
+          ax* (* amax (calculate-force-direction (- xr xf) (- vxr vxf) amax))
+          ay* (* amax (calculate-force-direction (- yr yf) (- vyr vyf) amax))
+          
+          ;; ri = al*ai + (1-al)*ri_1
+          al spline-factor
+          ax (+ (* al ax*) (* (- 1 al) (or rx-1 ax*)))
+          ay (+ (* al ay*) (* (- 1 al) (or ry-1 ay*)))
+          
+          ax- ax
+          ay- ay
+
+          vx (+ vxr (* ax- dt))
+          vy (+ vyr (* ay- dt))
+          x (+ xr (* vxr dt) (* 0.5 ax- dt dt))
+          y (+ yr (* vyr dt) (* 0.5 ay- dt dt))
+          ]
+      {:rocket (assoc rocket :x x :y y :vx vx :vy vy)
+       :a-log (conj (or a-log []) [ax ay])
+       :rx-1 ax
+       :ry-1 ay})))
+
+
+(defn calculate-force [amax dx dv dt flag-optimize]
+  (let [a1 (+ (/ dx dt dt) (/ (* 1.5 dv) dt))
+        a2 (- (/ dv dt) a1)]
+    ;; (js/isNaN 0)
+    (if (and flag-optimize (<= (- amax) a1 amax) (<= (- amax) a2 amax))
+      a1
+      (* amax (calculate-force-direction (- dx) (- dv) amax)))))
+
+(defn move-rocket [{:keys [system rocket max-rocket-force start-point finish-point a-log flag-optimize]} dt]
+  (when rocket
+    (let [{xr :x yr :y vxr :vx vyr :vy} rocket
+          {xf :x yf :y vxf :vx vyf :vy} (->> system flatten-system (filter #(= finish-point (:n %))) first)
+          ax (calculate-force max-rocket-force (- xf xr) (- vxf vxr) dt flag-optimize)
+          ay (calculate-force max-rocket-force (- yf yr) (- vyf vyr) dt flag-optimize)
+
           vx (+ vxr (* ax dt))
           vy (+ vyr (* ay dt))
           x (+ xr (* vxr dt) (* 0.5 ax dt dt))
           y (+ yr (* vyr dt) (* 0.5 ay dt dt))]
-      (assoc rocket :x x :y y :vx vx :vy vy))))
+      {:rocket (assoc rocket :x x :y y :vx vx :vy vy)
+       :a-log (conj (or a-log []) ax)})))
