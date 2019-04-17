@@ -93,7 +93,7 @@
                             zoom (fn [x limit] (* 0.45 limit (/ x r-max)))
                             norm (fn [x limit] (+ (* 0.5 limit) (zoom x limit)))
                             flat-system (model/flatten-system system)
-                            planet-r 3]
+                            planet-r 7]
                         [:div.svg-container
                          [:svg.field  {:width "100%" :height "100%"}
 
@@ -110,7 +110,7 @@
                             ^{:key n}
                             [:circle (merge {:cx (norm x area-width) :cy (norm y area-height) :r planet-r :fill :lightblue}
                                             (cond
-                                              (or (nil? r) (= 0 r)) {:r 6 :fill :lightyellow}
+                                              (or (nil? r) (= 0 r)) {:r planet-r :fill :lightyellow}
                                               ;; (> m 0.2) {:stroke-width 2 :stroke :lightblue}
                                               ))])
                           
@@ -159,26 +159,24 @@
                                            :stroke-width 1}]) (partition 2 1 a-log) (range))]]))})))
 
 (def test-system
-  {:n "Sun"
-   :i [{:n "Mercury" :r 1 :v 3}
-       ;; {:n "Venus" :r 2 :v 2.5}
-       {:n "Mars" :r 2 :v 2.5
-        :i [{:n "Phobos" :r 0.2 :v 12.1}
-            {:n "Deimos" :r 0.3 :v -7.9}]}
-       {:n "Earth" :r 3 :v -2
-        :i [{:n "Moon" :r 0.3 :v 12.9
-             :i [{:n "mo-1" :r 0.15 :v -17}]}]}
-       {:n "Jupiter" :r 4 :v -1.7
-        :i [{:n "Ganymede" :r 0.2 :v 8.1}
-            ;; {:n "Callisto" :r 0.3 :v -10.5}
-            {:n "Io" :r 0.37 :v -4.3}
-            ;; {:n "Europa" :r 0.45 :v -7.2}
-            ]}
-       ;; {:n "Saturn" :r 6 :v 0.5 :i [{:n "Titan" :r 0.22 :v 6.3}]}
-       {:n "Uranus" :r 5 :v -1.3
-        :i [{:n "Oberon" :r 0.3 :v 8.4
-             :i [{:n "ob-1" :r 0.15 :v -12.3}]}]}
-       ;; {:n "Neptune" :r 8 :v 1 :i [{:n "Triton" :r 0.24 :v -5.1}]}
+  {:n "p 0"
+   :i [;  {:n "Mercury" :r 1 :v 3}
+      ;  {:n "Mars" :r 2 :v 2.5
+      ;   :i [{:n "Phobos" :r 0.2 :v 12.1}
+      ;       {:n "Deimos" :r 0.3 :v -7.9}]}
+      ;  {:n "Earth" :r 3 :v -2
+      ;   :i [{:n "Moon" :r 0.3 :v 12.9
+      ;        :i [{:n "mo-1" :r 0.15 :v -17}]}]}
+      ;  {:n "Jupiter" :r 4 :v -1.7
+      ;   :i [{:n "Ganymede" :r 0.2 :v 8.1}
+      ;       {:n "Io" :r 0.37 :v -4.3}]}
+      ;  {:n "Uranus" :r 5 :v -1.3
+      ;   :i [{:n "Oberon" :r 0.3 :v 8.4
+      ;        :i [{:n "ob-1" :r 0.15 :v -12.3}]}]}
+       {:n "p 1" :r 3 :v -2
+        :i [{:n "p 2" :r 1 :v 6
+             :i [{:n "p 3" :r 0.5 :v -9}]}]}
+       ;;
        ]})
 
 (defn main-page [params]
@@ -190,7 +188,7 @@
                            :start-point (first names)
                            :finish-point (first names)}))
         state (r/atom (merge
-                       {:modelling-speed 33
+                       {:modelling-speed 50
                         :max-rocket-force 100
                         :flag-optimize false
                         :user-input-system (with-out-str
@@ -216,7 +214,8 @@
         [:div.label.checkboxes
          [:label.label "optimize"]
          [ws/input-checkbox {:state state
-                             :path [:flag-optimize]}]
+                             :path [:flag-optimize]}]]
+        [:div.label.checkboxes
          [:label.label "show names"]
          [ws/input-checkbox {:state state
                              :path [:show-names]}]]

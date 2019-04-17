@@ -78,6 +78,13 @@
        :rx-1 ax
        :ry-1 ay})))
 
+(defn sign [x] (cond (> x 0) 1 (< x 0) -1 :else 0))
+(defn abs  [x] (if (>= x 0) x (- x)))
+
+; (defn calculate-force-direction* [x v absa]
+;   (let [sx (sign x)
+;         sv (sign v)]
+;     (if (or (= sx sv) (> (abs x) (/ (* v v) (* 2 absa)))) (- sx) sx))
 
 (defn calculate-force [amax dx dv dt flag-optimize]
   (let [a1 (+ (/ dx dt dt) (/ (* 1.5 dv) dt))
@@ -85,7 +92,10 @@
     ;; (js/isNaN 0)
     (if (and flag-optimize (<= (- amax) a1 amax) (<= (- amax) a2 amax))
       a1
-      (* amax (calculate-force-direction (- dx) (- dv) amax)))))
+      ;;(* amax (calculate-force-direction (- dx) (- dv) amax))
+      (* amax (let [sx (sign dx)
+                    sv (sign dv)]
+                (if (or (= sx sv) (> (abs dx) (/ (* dv dv) (* 2 amax)))) sx (- sx)))))))
 
 (defn move-rocket [{:keys [system rocket max-rocket-force start-point finish-point a-log flag-optimize]} dt]
   (when rocket
