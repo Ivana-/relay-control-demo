@@ -1,6 +1,8 @@
 # star-system
 
-Modelling of motion relay control with graphical view
+Modelling of motion relay/smart control with graphical view
+
+## [Play with online demo!](https://codepen.io/Ivana-/full/bJLZrJ)
 
 ## [See on youtube](https://www.youtube.com/watch?v=M8uZXrG1V4E)
 
