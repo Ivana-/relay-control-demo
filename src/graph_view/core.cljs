@@ -1,16 +1,21 @@
 (ns graph-view.core
   (:require [reagent.core :as r]
             [garden.core :as garden]
-            [clojure.string :as str]
             [graph-view.widgets :as ws]
             [graph-view.model :as model]
-            [cljs.pprint :as prp]))
+            [cljs.pprint :as prp]
+            [cljs.reader :as cljs-reader]))
 
 (defn make-style [css] [:style (garden/css css)])
 
 (def style
   [:.page {:display "flex"
-           :height :-webkit-fill-available}
+           ;;  :height :-webkit-fill-available
+           :position :absolute
+           :top 0
+           :bottom 0
+           :left 0
+           :right 0}
 
    [:.bar {:display "inline-flex"
            :flex-direction "column"
@@ -71,11 +76,11 @@
 
 (defn periodic [f v]
   (-> (js/Promise. (fn [resolve] (js/setTimeout #(resolve (f v)) timeout-ms)))
-      (.then #(if % (periodic f v)))
+      (.then #(when % (periodic f v)))
       (.catch prn)))
 
 (defn stop-go [state]
-  (if-not (:simulation-on @state) (periodic on-tik state))
+  (when-not (:simulation-on @state) (periodic on-tik state))
   (swap! state update :simulation-on not))
 
 
@@ -113,15 +118,15 @@
                                               (or (nil? r) (= 0 r)) {:r planet-r :fill :lightyellow}
                                               ;; (> m 0.2) {:stroke-width 2 :stroke :lightblue}
                                               ))])
-                          
-                          (if show-names
+
+                          (when show-names
                             (for [{:keys [x y m n r]} flat-system]
                               ^{:key n}
                               [:text.vertex-name {:x (+ 8 (norm x area-width)) :y (+ 8 (norm y area-height)) :stroke "gray"} n]))
 
-                          (if rocket
+                          (when rocket
                             (let [{:keys [x y vx vy]} rocket]
-                              [:circle {:cx (norm x area-width) :cy (norm y area-height) :r planet-r :fill :magenta}]))]]))}))
+                              [:circle {:cx (norm x area-width) :cy (norm y area-height) :r planet-r :fill :yellow}]))]]))}))
 
 (defn a-log-component [params]
   (let [state (r/atom nil)
@@ -158,26 +163,27 @@
                                            :stroke "black"
                                            :stroke-width 1}]) (partition 2 1 a-log) (range))]]))})))
 
+;; (def test-system
+;;   {:n "p 0"
+;;    :i [{:n "p 1" :r 3 :v -2
+;;         :i [{:n "p 2" :r 1 :v 6
+;;              :i [{:n "p 3" :r 0.5 :v -9}]}]}]})
+
 (def test-system
-  {:n "p 0"
-   :i [;  {:n "Mercury" :r 1 :v 3}
-      ;  {:n "Mars" :r 2 :v 2.5
-      ;   :i [{:n "Phobos" :r 0.2 :v 12.1}
-      ;       {:n "Deimos" :r 0.3 :v -7.9}]}
-      ;  {:n "Earth" :r 3 :v -2
-      ;   :i [{:n "Moon" :r 0.3 :v 12.9
-      ;        :i [{:n "mo-1" :r 0.15 :v -17}]}]}
-      ;  {:n "Jupiter" :r 4 :v -1.7
-      ;   :i [{:n "Ganymede" :r 0.2 :v 8.1}
-      ;       {:n "Io" :r 0.37 :v -4.3}]}
-      ;  {:n "Uranus" :r 5 :v -1.3
-      ;   :i [{:n "Oberon" :r 0.3 :v 8.4
-      ;        :i [{:n "ob-1" :r 0.15 :v -12.3}]}]}
-       {:n "p 1" :r 3 :v -2
-        :i [{:n "p 2" :r 1 :v 6
-             :i [{:n "p 3" :r 0.5 :v -9}]}]}
-       ;;
-       ]})
+  {:n "Sun"
+   :i [{:n "Mercury" :r 1 :v 3}
+       {:n "Mars" :r 2 :v 2.5
+        :i [{:n "Phobos" :r 0.2 :v 12.1}
+            {:n "Deimos" :r 0.3 :v -7.9}]}
+       {:n "Earth" :r 3 :v -2
+        :i [{:n "Moon" :r 0.3 :v 12.9
+             :i [{:n "mo-1" :r 0.15 :v -17}]}]}
+       {:n "Jupiter" :r 4 :v -1.7
+        :i [{:n "Ganymede" :r 0.2 :v 8.1}
+            {:n "Io" :r 0.37 :v -4.3}]}
+       {:n "Uranus" :r 5 :v -1.3
+        :i [{:n "Oberon" :r 0.3 :v 8.4
+             :i [{:n "ob-1" :r 0.15 :v -12.3}]}]}]})
 
 (defn main-page [params]
   (let [system-params (fn [system]
@@ -188,7 +194,7 @@
                            :start-point (first names)
                            :finish-point (first names)}))
         state (r/atom (merge
-                       {:modelling-speed 50
+                       {:modelling-speed 30
                         :max-rocket-force 100
                         :flag-optimize false
                         :user-input-system (with-out-str
@@ -239,7 +245,7 @@
                            :path [:finish-point]
                            :items (:names @state)})]
         [:div.splitter]
-        [:button.btn {:on-click #(let [system (cljs.reader/read-string (:user-input-system @state))]
+        [:button.btn {:on-click #(let [system (cljs-reader/read-string (:user-input-system @state))]
                                    (swap! state merge (system-params system)))} "Apply input"]
         [ws/input-textarea {:state state
                             :path [:user-input-system]
