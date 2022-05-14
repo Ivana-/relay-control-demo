@@ -2,7 +2,7 @@
 
 Modelling of motion relay/smart control with graphical view
 
-## [Play with online demo!](https://codepen.io/Ivana-/full/bJLZrJ)
+## [Play with online demo!](https://codepen.io/Ivana4977517cb5/full/VwQmBNR)
 
 ## [See on youtube](https://www.youtube.com/watch?v=M8uZXrG1V4E)
 
@@ -36,7 +36,7 @@ To create a production build run:
     lein do clean, cljsbuild once min
 
 And open your browser in `resources/public/index.html`. You will not
-get live reloading, nor a REPL. 
+get live reloading, nor a REPL.
 
 ## License
 
